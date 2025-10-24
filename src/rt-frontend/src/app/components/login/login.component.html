@@ -1,0 +1,27 @@
+<div class="row justify-content-center mt-5">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-center mb-4">Login Portal RT</h2>
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" formControlName="username">
+            <div class="text-danger mt-1" *ngIf="form.controls.username.touched && form.controls.username.invalid">
+              Username wajib diisi
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" formControlName="password">
+            <div class="text-danger mt-1" *ngIf="form.controls.password.touched && form.controls.password.invalid">
+              Password wajib diisi
+            </div>
+          </div>
+          <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+          <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

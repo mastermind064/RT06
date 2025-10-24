@@ -1,0 +1,48 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Daftar Laporan Iuran</h3>
+  <a routerLink="/contributions/new" class="btn btn-primary">Laporkan Iuran</a>
+</div>
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+<div class="text-center" *ngIf="loading">
+  <div class="spinner-border text-primary"></div>
+</div>
+<div class="table-responsive" *ngIf="!loading">
+  <table class="table table-striped align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Periode</th>
+        <th>Nominal</th>
+        <th>Tanggal Bayar</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let contribution of contributions">
+        <td>{{ contribution.periodStart | date:'MMM yyyy' }} - {{ contribution.periodEnd | date:'MMM yyyy' }}</td>
+        <td>{{ contribution.amountPaid | currency:'IDR':'symbol-narrow' }}</td>
+        <td>{{ contribution.paymentDate | date:'dd MMM yyyy' }}</td>
+        <td>
+          <span class="badge" [ngClass]="{
+            'bg-warning text-dark': contribution.status === 'PENDING' || contribution.status === 'DRAFT',
+            'bg-success': contribution.status === 'APPROVED',
+            'bg-danger': contribution.status === 'REJECTED'
+          }">{{ contribution.status }}</span>
+        </td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary me-2" [routerLink]="['/contributions', contribution.contributionId, 'edit']"
+             *ngIf="contribution.status !== 'APPROVED'">Edit</a>
+          <button class="btn btn-sm btn-outline-success me-2"
+                  *ngIf="authService.hasRole('ADMIN') && contribution.status === 'PENDING'"
+                  (click)="approve(contribution)">Approve</button>
+          <button class="btn btn-sm btn-outline-danger"
+                  *ngIf="authService.hasRole('ADMIN') && contribution.status === 'PENDING'"
+                  (click)="reject(contribution)">Reject</button>
+        </td>
+      </tr>
+      <tr *ngIf="contributions.length === 0">
+        <td colspan="5" class="text-center text-muted">Belum ada laporan iuran.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

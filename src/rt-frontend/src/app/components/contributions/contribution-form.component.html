@@ -1,0 +1,37 @@
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h3 class="card-title mb-3">{{ isEdit ? 'Edit' : 'Lapor' }} Iuran</h3>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Periode Mulai</label>
+          <input type="month" class="form-control" formControlName="periodStart">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Periode Selesai</label>
+          <input type="month" class="form-control" formControlName="periodEnd">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Nominal</label>
+          <input type="number" class="form-control" formControlName="amountPaid">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Tanggal Pembayaran</label>
+          <input type="date" class="form-control" formControlName="paymentDate">
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Bukti Pembayaran</label>
+          <input type="file" class="form-control" (change)="onFileChange($event)">
+        </div>
+      </div>
+      <div class="alert alert-danger mt-3" *ngIf="error">{{ error }}</div>
+      <div class="d-flex justify-content-end mt-3">
+        <button class="btn btn-secondary me-2" type="button" routerLink="/contributions">Batal</button>
+        <button class="btn btn-primary" type="submit" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          Simpan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
