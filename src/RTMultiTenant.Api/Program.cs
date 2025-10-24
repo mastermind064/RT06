@@ -7,6 +7,7 @@ using RTMultiTenant.Api.Services;
 using RTMultiTenant.Api.Validators;
 using RTMultiTenant.Api.Extensions;
 using FluentValidation.AspNetCore;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 

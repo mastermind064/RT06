@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "RTMultiTenant.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55570;http://localhost:55571"
+    }
+  }
+}
