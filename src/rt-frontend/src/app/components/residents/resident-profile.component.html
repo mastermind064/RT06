@@ -1,0 +1,91 @@
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h3 class="card-title mb-3">Profil Warga</h3>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">NIK</label>
+          <input type="text" class="form-control" formControlName="nationalIdNumber">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Nama Lengkap</label>
+          <input type="text" class="form-control" formControlName="fullName">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Tanggal Lahir</label>
+          <input type="date" class="form-control" formControlName="birthDate">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Jenis Kelamin</label>
+          <select class="form-select" formControlName="gender">
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">No. Telepon</label>
+          <input type="text" class="form-control" formControlName="phoneNumber">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Alamat</label>
+          <textarea class="form-control" rows="2" formControlName="address"></textarea>
+        </div>
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Anggota Keluarga</h4>
+        <button type="button" class="btn btn-outline-primary" (click)="addFamilyMember()">Tambah Anggota</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Nama</th>
+              <th>Tanggal Lahir</th>
+              <th>Jenis Kelamin</th>
+              <th>Relasi</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let member of familyMembers.controls; let i = index" [formGroup]="member">
+              <td><input type="text" class="form-control" formControlName="fullName"></td>
+              <td><input type="date" class="form-control" formControlName="birthDate"></td>
+              <td>
+                <select class="form-select" formControlName="gender">
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-select" formControlName="relationship">
+                  <option value="ISTRI">Istri</option>
+                  <option value="SUAMI">Suami</option>
+                  <option value="ANAK">Anak</option>
+                  <option value="LAINNYA">Lainnya</option>
+                </select>
+              </td>
+              <td>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeFamilyMember(i)">
+                  Hapus
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="familyMembers.length === 0">
+              <td colspan="5" class="text-center text-muted">Belum ada anggota keluarga.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-success" *ngIf="success">Perubahan berhasil disimpan dan menunggu persetujuan admin.</div>
+      <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          Simpan Profil
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
