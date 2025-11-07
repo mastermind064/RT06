@@ -26,10 +26,112 @@
           <label class="form-label">No. Telepon</label>
           <input type="text" class="form-control" formControlName="phoneNumber">
         </div>
-        <div class="col-12">
-          <label class="form-label">Alamat</label>
-          <textarea class="form-control" rows="2" formControlName="address"></textarea>
+        <!-- Foto Profil -->
+        <div class="col-md-6">
+          <label class="form-label">Foto Profil</label>
+          <input type="file" class="form-control mb-2" (change)="onFilePicChange($event)" accept="image/*,.pdf">
+
+          <!-- Preview: jika user pilih file baru -->
+          <ng-container *ngIf="picPreviewUrl; else picCurrent">
+            <!-- jika pdf -->
+            <div *ngIf="isPdf(picPreviewUrl); else picPreviewImg">
+              <a [href]="picPreviewUrl" target="_blank" rel="noopener">Lihat file terpilih</a>
+            </div>
+            <ng-template #picPreviewImg>
+              <img [src]="picPreviewUrl" class="img-thumbnail" style="max-height:180px">
+            </ng-template>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" (click)="removePic()">Hapus</button>
+          </ng-container>
+
+          <!-- Preview: file yang sudah tersimpan -->
+          <ng-template #picCurrent>
+            <div *ngIf="currentPicUrl">
+              <div *ngIf="isPdf(currentPicUrl); else picCurrentImg">
+                <a [href]="currentPicUrl" target="_blank" rel="noopener">Lihat file tersimpan</a>
+                <object [data]="currentPicUrl" type="application/pdf" width="100%" height="200" class="mt-2"></object>
+              </div>
+              <ng-template #picCurrentImg>
+                <img [src]="currentPicUrl" class="img-thumbnail d-block" style="max-height:180px">
+              </ng-template>
+              <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="removePic()">Hapus</button>
+              </div>
+            </div>
+          </ng-template>
         </div>
+
+        <!-- Kartu Keluarga -->
+        <div class="col-md-6">
+          <label class="form-label">Kartu Keluarga</label>
+          <input type="file" class="form-control mb-2" (change)="onFileKkChange($event)" accept="image/*,.pdf">
+
+          <ng-container *ngIf="previewKkIsPdf; else imgPreview">
+              <a [href]="kkPreviewUrl"
+                 target="_blank"
+                 rel="noopener">
+                Lihat file {{ isEdit ? 'tersimpan' : 'terpilih' }}
+              </a>
+              <object
+                [data]="kkPreviewUrl"
+                type="application/pdf"
+                width="100%"
+                height="300"
+                class="mt-2">
+              </object>
+          </ng-container>
+
+          <ng-template #imgPreview>
+              <img
+                [src]="proofPreviewUrl"
+                class="img-thumbnail d-block"
+                style="max-height:180px">
+          </ng-template>
+
+          <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary mt-2"
+              (click)="removePic()">
+              Hapus
+          </button>
+
+          <!-- <ng-container *ngIf="kkPreviewUrl; else kkCurrent">
+            <div *ngIf="isPdf(kkPreviewUrl); else kkPreviewImg">
+              <a [href]="kkPreviewUrl" target="_blank" rel="noopener">Lihat file terpilih</a>
+            </div>
+            <ng-template #kkPreviewImg>
+              <img [src]="kkPreviewUrl" class="img-thumbnail" style="max-height:180px">
+            </ng-template>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" (click)="removeKk()">Hapus</button>
+          </ng-container> -->
+
+          <ng-template #kkCurrent>
+            <div *ngIf="currentKkUrl">
+              <div *ngIf="isPdf(currentKkUrl); else kkCurrentImg">
+                <a [href]="currentKkUrl" target="_blank" rel="noopener">Lihat file tersimpan</a>
+                <object [data]="currentKkUrl" type="application/pdf" width="100%" height="200" class="mt-2"></object>
+              </div>
+              <ng-template #kkCurrentImg>
+                <img [src]="currentKkUrl" class="img-thumbnail d-block" style="max-height:180px">
+              </ng-template>
+              <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2" (click)="removeKk()">Hapus</button>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Blok</label>
+          <input type="text"
+                class="form-control mb-2"
+                placeholder="Cari blok..."
+                (input)="filterBlok($event.target.value)">
+          <select class="form-select" formControlName="blok">
+            <option value="">-- Pilih Blok --</option>
+            <option *ngFor="let b of filteredBlokList" [value]="b">{{ b }}</option>
+          </select>
+        </div>
+
+        
       </div>
 
       <hr class="my-4">

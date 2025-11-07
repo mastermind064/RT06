@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RTMultiTenant.Api.Data;
 using RTMultiTenant.Api.Entities;
+using System.Text.Json;
 
 namespace RTMultiTenant.Api.Services;
 
@@ -20,11 +20,19 @@ public class EventPublisher
         Guid causedByUserId, CancellationToken cancellationToken = default)
     {
         var rtId = _tenantProvider.GetRtId();
-        var version = await _dbContext.EventStore
+        /*var version = await _dbContext.EventStore
             .Where(e => e.AggregateId == aggregateId && e.RtId == rtId)
             .Select(e => e.AggregateVersion)
             .DefaultIfEmpty(0)
-            .MaxAsync(cancellationToken);
+            .MaxAsync(cancellationToken);*/
+
+        var version = await _dbContext.EventStore
+            .Where(e => e.AggregateId == aggregateId && e.RtId == rtId)
+            .MaxAsync(
+                e => (int?)e.AggregateVersion,
+                cancellationToken
+            ) ?? 0;
+
 
         var record = new EventRecord
         {

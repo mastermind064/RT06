@@ -1,7 +1,16 @@
 export interface CashSummary {
-  year: number;
-  month: number;
-  totalContributionIn: number;
-  totalExpenseOut: number;
-  balanceEnd: number;
+  Year: number;
+  Month: number;
+  TotalContributionIn: number;
+  TotalExpenseOut: number;
+  BalanceEnd: number;
 }
+
+export interface YearlyCashSummary {
+  Year: number;
+  TotalContributionIn: number;
+  TotalExpenseOut: number;
+  BalanceEnd: number;
+}
+
+export type CashSummaryResponse = {Monthly: CashSummary, Yearly: YearlyCashSummary};

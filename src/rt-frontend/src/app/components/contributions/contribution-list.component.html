@@ -19,24 +19,24 @@
     </thead>
     <tbody>
       <tr *ngFor="let contribution of contributions">
-        <td>{{ contribution.periodStart | date:'MMM yyyy' }} - {{ contribution.periodEnd | date:'MMM yyyy' }}</td>
-        <td>{{ contribution.amountPaid | currency:'IDR':'symbol-narrow' }}</td>
-        <td>{{ contribution.paymentDate | date:'dd MMM yyyy' }}</td>
+        <td>{{ contribution.PeriodStart | date:'MMM yyyy' }} - {{ contribution.PeriodEnd | date:'MMM yyyy' }}</td>
+        <td>{{ contribution.AmountPaid | currency:'IDR':'symbol-narrow' }}</td>
+        <td>{{ contribution.PaymentDate | date:'dd MMM yyyy' }}</td>
         <td>
           <span class="badge" [ngClass]="{
-            'bg-warning text-dark': contribution.status === 'PENDING' || contribution.status === 'DRAFT',
-            'bg-success': contribution.status === 'APPROVED',
-            'bg-danger': contribution.status === 'REJECTED'
-          }">{{ contribution.status }}</span>
+            'bg-warning text-dark': contribution.Status === 'PENDING' || contribution.Status === 'DRAFT',
+            'bg-success': contribution.Status === 'APPROVED',
+            'bg-danger': contribution.Status === 'REJECTED'
+          }">{{ contribution.Status }}</span>
         </td>
         <td class="text-end">
-          <a class="btn btn-sm btn-outline-secondary me-2" [routerLink]="['/contributions', contribution.contributionId, 'edit']"
-             *ngIf="contribution.status !== 'APPROVED'">Edit</a>
+          <a class="btn btn-sm btn-outline-secondary me-2" [routerLink]="['/contributions', contribution.ContributionId, 'edit']"
+             *ngIf="contribution.Status !== 'APPROVED'">Edit</a>
           <button class="btn btn-sm btn-outline-success me-2"
-                  *ngIf="authService.hasRole('ADMIN') && contribution.status === 'PENDING'"
+                  *ngIf="authService.hasRole('ADMIN') && contribution.Status === 'PENDING'"
                   (click)="approve(contribution)">Approve</button>
           <button class="btn btn-sm btn-outline-danger"
-                  *ngIf="authService.hasRole('ADMIN') && contribution.status === 'PENDING'"
+                  *ngIf="authService.hasRole('ADMIN') && contribution.Status === 'PENDING'"
                   (click)="reject(contribution)">Reject</button>
         </td>
       </tr>

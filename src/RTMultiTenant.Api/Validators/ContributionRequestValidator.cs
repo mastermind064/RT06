@@ -10,7 +10,7 @@ public class ContributionReportRequestValidator : AbstractValidator<Contribution
         RuleFor(x => x.PeriodStart).NotEmpty();
         RuleFor(x => x.PeriodEnd).NotEmpty().GreaterThanOrEqualTo(x => x.PeriodStart);
         RuleFor(x => x.AmountPaid).GreaterThan(0);
-        RuleFor(x => x.ProofImagePath).NotEmpty();
+        RuleFor(x => x.Proof).NotEmpty();
     }
 }
 
@@ -19,6 +19,6 @@ public class ContributionUpdateRequestValidator : AbstractValidator<Contribution
     public ContributionUpdateRequestValidator()
     {
         RuleFor(x => x.AmountPaid).GreaterThan(0);
-        RuleFor(x => x.ProofImagePath).NotEmpty();
+        RuleFor(x => x.Proof).NotEmpty();
     }
 }

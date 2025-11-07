@@ -12,9 +12,10 @@ public class Resident
     public string FullName { get; set; } = default!;
     public DateTime BirthDate { get; set; }
     public string Gender { get; set; } = default!;
-    public string Address { get; set; } = default!;
+    public string Blok { get; set; } = default!;
     public string PhoneNumber { get; set; } = default!;
-    public string? KkDocumentPath { get; set; }
+    public string? KkDocumentPath { get; set; } = default!;
+    public string? PicPath { get; set; } = default!;
     public string ApprovalStatus { get; set; } = "DRAFT";
     public string? ApprovalNote { get; set; }
     public DateTime CreatedAt { get; set; }

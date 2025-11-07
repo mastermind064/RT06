@@ -19,16 +19,16 @@
     </thead>
     <tbody>
       <tr *ngFor="let expense of expenses">
-        <td>{{ expense.expenseDate | date:'dd MMM yyyy' }}</td>
-        <td>{{ expense.description }}</td>
-        <td>{{ expense.amount | currency:'IDR':'symbol-narrow' }}</td>
+        <td>{{ expense.ExpenseDate | date:'dd MMM yyyy' }}</td>
+        <td>{{ expense.Description }}</td>
+        <td>{{ expense.Amount | currency:'IDR':'symbol-narrow' }}</td>
         <td>
-          <span class="badge" [ngClass]="expense.isActive ? 'bg-success' : 'bg-secondary'">
-            {{ expense.isActive ? 'Aktif' : 'Tidak Aktif' }}
+          <span class="badge" [ngClass]="expense.IsActive ? 'bg-success' : 'bg-secondary'">
+            {{ expense.IsActive ? 'Aktif' : 'Tidak Aktif' }}
           </span>
         </td>
         <td class="text-end">
-          <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/cash-expenses', expense.expenseId, 'edit']">Edit</a>
+          <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/cash-expenses', expense.ExpenseId, 'edit']">Edit</a>
         </td>
       </tr>
       <tr *ngIf="expenses.length === 0">

@@ -1,13 +1,13 @@
 export type ContributionStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface Contribution {
-  contributionId: string;
-  residentId: string;
-  periodStart: string;
-  periodEnd: string;
-  amountPaid: number;
-  paymentDate: string;
-  proofImagePath: string;
-  status: ContributionStatus;
-  adminNote?: string;
+  ContributionId: string;
+  ResidentId: string;
+  PeriodStart: string;
+  PeriodEnd: string;
+  AmountPaid: number;
+  PaymentDate: string;
+  ProofImagePath: string;
+  Status: ContributionStatus;
+  AdminNote?: string;
 }

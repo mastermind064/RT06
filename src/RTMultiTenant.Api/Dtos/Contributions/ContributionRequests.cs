@@ -2,18 +2,24 @@ namespace RTMultiTenant.Api.Dtos.Contributions;
 
 public class ContributionReportRequest
 {
-    public DateTime PeriodStart { get; set; }
-    public DateTime PeriodEnd { get; set; }
+    public string PeriodStart { get; set; } = default!;   // pakai string dulu, nanti parse ke DateTime
+    public string PeriodEnd { get; set; } = default!;
     public decimal AmountPaid { get; set; }
-    public DateTime PaymentDate { get; set; }
-    public string ProofImagePath { get; set; } = default!;
+    public string PaymentDate { get; set; } = default!;
+
+    // nama harus sama dengan key yang kamu append di FormData: "proof"
+    public IFormFile? Proof { get; set; }
 }
 
 public class ContributionUpdateRequest
 {
+    public string PeriodStart { get; set; } = default!;   // pakai string dulu, nanti parse ke DateTime
+    public string PeriodEnd { get; set; } = default!;
     public decimal AmountPaid { get; set; }
-    public DateTime PaymentDate { get; set; }
-    public string ProofImagePath { get; set; } = default!;
+    public string PaymentDate { get; set; } = default!;
+
+    // nama harus sama dengan key yang kamu append di FormData: "proof"
+    public IFormFile? Proof { get; set; }
 }
 
 public class ContributionReviewRequest

@@ -8,6 +8,7 @@ obj/
 .vs/
 **/bin/
 **/obj/
-node_modules/
 dist/
 src/rt-frontend/.angular/
+src/rt-frontend/node_modules/
+src/RTMultiTenant.Api/wwwroot/

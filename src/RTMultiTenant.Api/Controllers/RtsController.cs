@@ -53,6 +53,7 @@ public class RtsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now
         };
+        Console.WriteLine($"RtId: {rt.RtId}");  
 
         var adminUser = new User
         {

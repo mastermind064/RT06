@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RTMultiTenant.Api.Data;
 using RTMultiTenant.Api.Dtos.Auth;
+using RTMultiTenant.Api.Entities;
 using RTMultiTenant.Api.Services;
 
 namespace RTMultiTenant.Api.Controllers;
@@ -38,13 +39,32 @@ public class AuthController : ControllerBase
             return Unauthorized("Invalid credentials");
         }
 
+        var resident = new Resident();
+
+        if (user.Role == "WARGA" && user.ResidentId is null)
+        {
+            resident = await _dbContext.Residents.FirstOrDefaultAsync(r => r.ResidentId == user.ResidentId, cancellationToken);
+            if (resident is null)
+            {
+                return Unauthorized("Invalid resident");
+            }
+        }        
+
+        var rt = await _dbContext.Rts.FirstOrDefaultAsync(r => r.RtId == user.RtId, cancellationToken);
+        if (rt is null)
+        {
+            return Unauthorized("invalid RT");
+        }
+
         var token = _jwtTokenService.GenerateToken(user);
         return new LoginResponse
         {
             Token = token,
             RtId = user.RtId,
             UserId = user.UserId,
-            Role = user.Role
+            Role = user.Role,
+            Username = user.Username + " - " + resident.Blok,
+            RtRw = rt.RtNumber + "/RW " + rt.RwNumber,
         };
     }
 
@@ -58,38 +78,90 @@ public class AuthController : ControllerBase
             return Conflict("Username already exists");
         }
 
-        if (request.ResidentId.HasValue)
+        // MULAI TRANSAKSI DATABASE
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        try
         {
-            var resident = await _dbContext.Residents.FirstOrDefaultAsync(r => r.ResidentId == request.ResidentId.Value, cancellationToken);
-            if (resident is null || resident.RtId != rtId)
+            Guid residentIdToUse;
+
+            if (request.ResidentId.HasValue)
             {
-                return BadRequest("Resident not found in this RT");
+                // CASE 1: ADMIN MAU LINK USER KE RESIDENT YANG SUDAH ADA
+                var resident = await _dbContext.Residents
+                    .FirstOrDefaultAsync(r => r.ResidentId == request.ResidentId.Value, cancellationToken);
+
+                if (resident is null || resident.RtId != rtId)
+                {
+                    return BadRequest("Resident not found in this RT");
+                }
+
+                residentIdToUse = resident.ResidentId;
             }
+            else
+            {
+                // CASE 2: RESIDENT BARU (DUMMY) DIBUAT OTOMATIS
+                var newResident = new Resident
+                {
+                    ResidentId = Guid.NewGuid(),
+                    RtId = rtId,
+                    NationalIdNumber = "-",
+                    FullName = "-",
+                    BirthDate = DateTime.UtcNow,
+                    Gender = "-",
+                    Blok = "-",
+                    PhoneNumber = "-",
+                    ApprovalStatus = "DRAFT",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _dbContext.Residents.Add(newResident);
+                await _dbContext.SaveChangesAsync(cancellationToken); // simpan sementara di dalam transaksi
+
+                residentIdToUse = newResident.ResidentId;
+            }
+
+            var now = DateTime.UtcNow;
+
+            var user = new Entities.User
+            {
+                UserId = Guid.NewGuid(),
+                RtId = rtId,
+                Username = request.Username,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = request.Role,
+                IsActive = true,
+                ResidentId = residentIdToUse, // <-- penting: pastikan ke residentId yang benar
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // KALAU SEMUA OK -> COMMIT
+            await transaction.CommitAsync(cancellationToken);
+
+            return CreatedAtAction(nameof(GetUserAsync), new { userId = user.UserId }, new
+            {
+                user.UserId,
+                user.Username,
+                user.Role,
+                user.IsActive
+            });
         }
-
-        var now = DateTime.UtcNow;
-        var user = new Entities.User
+        catch (Exception ex)
         {
-            UserId = Guid.NewGuid(),
-            RtId = rtId,
-            Username = request.Username,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = request.Role,
-            IsActive = true,
-            ResidentId = request.ResidentId,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
+            // KALAU ADA ERROR -> ROLLBACK
+            await transaction.RollbackAsync(cancellationToken);
 
-        _dbContext.Users.Add(user);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetUserAsync), new { userId = user.UserId }, new
-        {
-            user.UserId,
-            user.Username,
-            user.Role,
-            user.IsActive
-        });
+            // boleh kamu log ex di logger
+            // _logger.LogError(ex, "Failed to register user");
+
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                "Failed to register user");
+        }
     }
 
     [HttpGet("{userId:guid}")]

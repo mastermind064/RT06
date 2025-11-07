@@ -12,7 +12,7 @@ export class ResidentService {
     return this.http.get<ResidentProfile>(`${environment.apiUrl}/residents/me`);
   }
 
-  updateProfile(profile: Partial<ResidentProfile>): Observable<void> {
-    return this.http.put<void>(`${environment.apiUrl}/residents/me`, profile);
+  updateProfile(profile: FormData): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/residents/me`, profile);
   }
 }

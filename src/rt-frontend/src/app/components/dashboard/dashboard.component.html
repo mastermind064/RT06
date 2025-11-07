@@ -1,6 +1,48 @@
 <div class="card shadow-sm">
   <div class="card-body">
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+      <h3 class="card-title mb-0">Ringkasan Kas Tahunan</h3>
+      <form [formGroup]="filterForm" class="d-flex gap-2">
+        <!-- <input type="number" class="form-control" formControlName="month" min="1" max="12"> -->
+        <input type="number" class="form-control" formControlName="year" min="2020" max="2100">
+      </form>
+    </div>
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+    <div *ngIf="!loading && yearlySummary" class="row text-center">
+      <div class="col-md-4">
+        <div class="p-3 border rounded bg-light">
+          <h6>Pemasukan</h6>
+          <h3 class="text-success">{{ yearlySummary.TotalContributionIn | currency:'IDR':'symbol-narrow' }}</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 border rounded bg-light">
+          <h6>Pengeluaran</h6>
+          <h3 class="text-danger">{{ yearlySummary.TotalExpenseOut | currency:'IDR':'symbol-narrow' }}</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 border rounded bg-light">
+          <h6>Saldo Akhir</h6>
+          <h3 class="text-primary">{{ yearlySummary.BalanceEnd | currency:'IDR':'symbol-narrow' }}</h3>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="!loading && !yearlySummary" class="alert alert-info mt-3">
+      Data ringkasan belum tersedia untuk periode ini.
+    </div>
+  </div>
+</div>
+
+<div>
+  <br>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
       <h3 class="card-title mb-0">Ringkasan Kas Bulanan</h3>
       <form [formGroup]="filterForm" class="d-flex gap-2">
         <input type="number" class="form-control" formControlName="month" min="1" max="12">
@@ -14,19 +56,19 @@
       <div class="col-md-4">
         <div class="p-3 border rounded bg-light">
           <h6>Pemasukan</h6>
-          <h3 class="text-success">{{ summary.totalContributionIn | currency:'IDR':'symbol-narrow' }}</h3>
+          <h3 class="text-success">{{ summary.TotalContributionIn | currency:'IDR':'symbol-narrow' }}</h3>
         </div>
       </div>
       <div class="col-md-4">
         <div class="p-3 border rounded bg-light">
           <h6>Pengeluaran</h6>
-          <h3 class="text-danger">{{ summary.totalExpenseOut | currency:'IDR':'symbol-narrow' }}</h3>
+          <h3 class="text-danger">{{ summary.TotalExpenseOut | currency:'IDR':'symbol-narrow' }}</h3>
         </div>
       </div>
       <div class="col-md-4">
         <div class="p-3 border rounded bg-light">
           <h6>Saldo Akhir</h6>
-          <h3 class="text-primary">{{ summary.balanceEnd | currency:'IDR':'symbol-narrow' }}</h3>
+          <h3 class="text-primary">{{ summary.BalanceEnd | currency:'IDR':'symbol-narrow' }}</h3>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { CashSummaryService } from '../../services/cash-summary.service';
-import { CashSummary } from '../../models/cash-summary.model';
+import { CashSummary, YearlyCashSummary } from '../../models/cash-summary.model';
 
 @Component({
   standalone: true,
@@ -15,6 +15,7 @@ export class DashboardComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   summary?: CashSummary;
+  yearlySummary?: YearlyCashSummary;
   loading = false;
 
   filterForm = this.fb.nonNullable.group({
@@ -31,8 +32,9 @@ export class DashboardComponent implements OnInit {
     const { year, month } = this.filterForm.getRawValue();
     this.loading = true;
     this.summaryService.getMonthlySummary(year, month).subscribe({
-      next: (summary) => {
-        this.summary = summary;
+      next: (summary) => {console.log(summary);
+        this.summary = summary.Monthly;
+        this.yearlySummary = summary.Yearly;
         this.loading = false;
       },
       error: () => {

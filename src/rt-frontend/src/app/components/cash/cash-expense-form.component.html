@@ -5,19 +5,19 @@
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label">Tanggal</label>
-          <input type="date" class="form-control" formControlName="expenseDate">
+          <input type="date" class="form-control" formControlName="ExpenseDate">
         </div>
         <div class="col-md-8">
           <label class="form-label">Keterangan</label>
-          <input type="text" class="form-control" formControlName="description">
+          <input type="text" class="form-control" formControlName="Description">
         </div>
         <div class="col-md-6">
           <label class="form-label">Nominal</label>
-          <input type="number" class="form-control" formControlName="amount">
+          <input type="number" class="form-control" formControlName="Amount">
         </div>
         <div class="col-md-6">
           <label class="form-label">Status</label>
-          <select class="form-select" formControlName="isActive">
+          <select class="form-select" formControlName="IsActive">
             <option [ngValue]="true">Aktif</option>
             <option [ngValue]="false">Tidak Aktif</option>
           </select>

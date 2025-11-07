@@ -25,21 +25,36 @@ export class ContributionListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.contributionService.list().subscribe({
-      next: (data) => {
-        this.contributions = data;
-        this.loading = false;
-        this.error = null;
-      },
-      error: () => {
-        this.error = 'Tidak dapat memuat data iuran.';
-        this.loading = false;
-      }
-    });
+    if(this.authService.hasRole('ADMIN')) {
+      this.contributionService.listAll().subscribe({
+        next: (data) => { console.log(data);
+          this.contributions = data;
+          this.loading = false;
+          this.error = null;
+        },
+        error: () => {
+          this.error = 'Tidak dapat memuat data iuran.';
+          this.loading = false;
+        }
+      });
+    }else {
+      this.contributionService.listMe().subscribe({
+        next: (data) => { console.log(data);
+          this.contributions = data;
+          this.loading = false;
+          this.error = null;
+        },
+        error: () => {
+          this.error = 'Tidak dapat memuat data iuran.';
+          this.loading = false;
+        }
+      });
+    }
+    
   }
 
   approve(contribution: Contribution): void {
-    this.contributionService.approve(contribution.contributionId).subscribe({
+    this.contributionService.approve(contribution.ContributionId, {Approve : true, AdminNote: "approve"}).subscribe({
       next: () => this.load()
     });
   }
@@ -49,7 +64,7 @@ export class ContributionListComponent implements OnInit {
     if (!note) {
       return;
     }
-    this.contributionService.reject(contribution.contributionId, note).subscribe({
+    this.contributionService.reject(contribution.ContributionId, note).subscribe({
       next: () => this.load()
     });
   }

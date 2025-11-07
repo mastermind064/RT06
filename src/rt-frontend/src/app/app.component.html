@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary" *ngIf="authService.isAuthenticated()">
   <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/dashboard">Portal RT</a>
+    <a class="navbar-brand" routerLink="/dashboard">Portal RT {{ authService.currentUser()?.rtRw | uppercase }}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -9,11 +9,17 @@
         <li class="nav-item">
           <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
           <a class="nav-link" routerLink="/profile" routerLinkActive="active">Profil</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/contributions" routerLinkActive="active">Iuran</a>
+        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
+          <a class="nav-link" routerLink="/contributions" routerLinkActive="active">Iuranku</a>
+        </li>
+        <li class="nav-item" *ngIf="authService.hasRole('ADMIN')">
+          <a class="nav-link" routerLink="/contributions" routerLinkActive="active">Iuran Warga</a>
+        </li>
+        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
+          <a class="nav-link" routerLink="/contributions/new" routerLinkActive="active">Lapor Iuran</a>
         </li>
         <li class="nav-item" *ngIf="authService.hasRole('ADMIN')">
           <a class="nav-link" routerLink="/cash-expenses" routerLinkActive="active">Pengeluaran Kas</a>
@@ -22,8 +28,11 @@
           <a class="nav-link" routerLink="/users" routerLinkActive="active">Manajemen User</a>
         </li>
       </ul>
-      <span class="navbar-text me-3">{{ authService.currentUser()?.username }}</span>
-      <button class="btn btn-outline-light" (click)="logout()">Logout</button>
+      <span class="navbar-text me-3">{{ authService.currentUser()?.username | uppercase }}</span>
+      <button class="btn btn-outline-light" (click)="logout()" title="Logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+
     </div>
   </div>
 </nav>

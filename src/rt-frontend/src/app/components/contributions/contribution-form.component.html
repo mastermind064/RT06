@@ -21,8 +21,45 @@
         </div>
         <div class="col-md-12">
           <label class="form-label">Bukti Pembayaran</label>
-          <input type="file" class="form-control" (change)="onFileChange($event)">
+          <input
+            type="file"
+            class="form-control"
+            (change)="onFileChange($event)"
+            accept="image/*,.pdf">
+
+          <!-- Preview file (baru atau lama) -->
+          <div *ngIf="proofPreviewUrl" class="mt-2">
+            <ng-container *ngIf="previewIsPdf; else imgPreview">
+              <a [href]="proofPreviewUrl"
+                 target="_blank"
+                 rel="noopener">
+                Lihat file {{ isEdit ? 'tersimpan' : 'terpilih' }}
+              </a>
+              <object
+                [data]="proofPreviewUrl"
+                type="application/pdf"
+                width="100%"
+                height="300"
+                class="mt-2">
+              </object>
+            </ng-container>
+
+            <ng-template #imgPreview>
+              <img
+                [src]="proofPreviewUrl"
+                class="img-thumbnail d-block"
+                style="max-height:180px">
+            </ng-template>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary mt-2"
+              (click)="removePic()">
+              Hapus
+            </button>
+          </div>
         </div>
+        
       </div>
       <div class="alert alert-danger mt-3" *ngIf="error">{{ error }}</div>
       <div class="d-flex justify-content-end mt-3">

@@ -81,9 +81,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FullName).HasColumnName("full_name").HasMaxLength(100);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
             entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(1);
-            entity.Property(e => e.Address).HasColumnName("address").HasMaxLength(255);
+            entity.Property(e => e.Blok).HasColumnName("blok").HasMaxLength(3);
             entity.Property(e => e.PhoneNumber).HasColumnName("phone_number").HasMaxLength(30);
             entity.Property(e => e.KkDocumentPath).HasColumnName("kk_document_path").HasMaxLength(255);
+            entity.Property(e => e.PicPath).HasColumnName("pic_path").HasMaxLength(255);
             entity.Property(e => e.ApprovalStatus).HasColumnName("approval_status").HasMaxLength(20);
             entity.Property(e => e.ApprovalNote).HasColumnName("approval_note").HasMaxLength(255);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");

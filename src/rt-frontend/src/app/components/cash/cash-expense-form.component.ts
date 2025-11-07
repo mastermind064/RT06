@@ -17,11 +17,11 @@ export class CashExpenseFormComponent implements OnInit {
   private readonly router = inject(Router);
 
   form = this.fb.nonNullable.group({
-    expenseId: '',
-    expenseDate: ['', Validators.required],
-    description: ['', Validators.required],
-    amount: [0, [Validators.required, Validators.min(0)]],
-    isActive: [true]
+    ExpenseId: '',
+    ExpenseDate: ['', Validators.required],
+    Description: ['', Validators.required],
+    Amount: [0, [Validators.required, Validators.min(0)]],
+    IsActive: [true]
   });
 
   isEdit = false;
@@ -40,7 +40,14 @@ export class CashExpenseFormComponent implements OnInit {
     this.loading = true;
     this.cashExpenseService.get(id).subscribe({
       next: (expense) => {
-        this.form.patchValue(expense);
+        console.log(expense);
+        this.form.patchValue({
+          ExpenseId: expense[0].ExpenseId,
+          ExpenseDate: this.cashExpenseService['toDateInputValue'](expense[0].ExpenseDate),
+          Description: expense[0].Description,
+          Amount: expense[0].Amount,
+          IsActive: expense[0].IsActive
+        });
         this.loading = false;
       },
       error: () => {
@@ -57,8 +64,8 @@ export class CashExpenseFormComponent implements OnInit {
     }
     this.loading = true;
     const payload = this.form.getRawValue();
-    const request = this.isEdit && payload.expenseId
-      ? this.cashExpenseService.update(payload.expenseId, payload)
+    const request = this.isEdit && payload.ExpenseId
+      ? this.cashExpenseService.update(payload.ExpenseId, payload)
       : this.cashExpenseService.create(payload);
 
     request.subscribe({

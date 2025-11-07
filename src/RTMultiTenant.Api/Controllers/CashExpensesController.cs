@@ -28,8 +28,27 @@ public class CashExpensesController : ControllerBase
         _summaryUpdater = summaryUpdater;
     }
 
+    [HttpGet("{expenseId:guid}")]
+    public async Task<IActionResult> GetExpensesByIdAsync(Guid expenseId, CancellationToken cancellationToken)
+    {
+        var rtId = _tenantProvider.GetRtId();
+        var expenses = await _dbContext.CashExpenses
+            .Where(e => e.RtId == rtId && e.ExpenseId == expenseId)
+            .OrderByDescending(e => e.ExpenseDate)
+            .Select(e => new
+            {
+                e.ExpenseId,
+                e.ExpenseDate,
+                e.Description,
+                e.Amount,
+                e.IsActive
+            }).ToListAsync(cancellationToken);
+
+        return Ok(expenses);
+    }
+
     [HttpGet]
-    public async Task<IActionResult> GetExpensesAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetExpensesAsync(Guid expenseId, CancellationToken cancellationToken)
     {
         var rtId = _tenantProvider.GetRtId();
         var expenses = await _dbContext.CashExpenses

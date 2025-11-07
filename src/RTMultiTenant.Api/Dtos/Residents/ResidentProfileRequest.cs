@@ -1,3 +1,7 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace RTMultiTenant.Api.Dtos.Residents;
 
 public class ResidentProfileRequest
@@ -6,9 +10,17 @@ public class ResidentProfileRequest
     public string FullName { get; set; } = default!;
     public DateTime BirthDate { get; set; }
     public string Gender { get; set; } = default!;
-    public string Address { get; set; } = default!;
+    public string Blok { get; set; } = default!;
     public string PhoneNumber { get; set; } = default!;
-    public string? KkDocumentPath { get; set; }
+    public IFormFile? KkDocumentPath { get; set; }
+    public IFormFile? PicPath { get; set; }
+    //public List<ResidentFamilyMemberRequest> FamilyMembers { get; set; } = new();
+    public bool KkDelete { get; set; }
+    public bool PicDelete { get; set; }
+    [FromForm(Name = "familyMembers")]
+    public string? FamilyMembersJson { get; set; }
+
+    // 👉 property ini akan diisi manual oleh controller
     public List<ResidentFamilyMemberRequest> FamilyMembers { get; set; } = new();
 }
 

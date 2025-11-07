@@ -10,9 +10,9 @@ export const RoleGuard: CanActivateFn = (route) => {
   if (!roles) {
     return true;
   }
-  if (authService.isAuthenticated() && roles.includes(authService.currentUser()?.role ?? 'WARGA')) {
+  if (authService.isAuthenticated() && authService.validateToken() && roles.includes(authService.currentUser()?.role ?? 'WARGA')) {
     return true;
   }
-  router.navigate(['/dashboard']);
+  router.navigate(['/login']);
   return false;
 };

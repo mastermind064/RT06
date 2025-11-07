@@ -5,16 +5,16 @@ import { Observable } from 'rxjs';
 import { AuthUser, UserRole } from '../models/user.model';
 
 export interface UserSummary {
-  userId: string;
-  username: string;
-  role: UserRole;
-  isActive: boolean;
+  UserId: string;
+  Username: string;
+  Role: UserRole;
+  IsActive: boolean;
 }
 
 export interface CreateUserRequest {
-  username: string;
-  password: string;
-  role: UserRole;
+  Username: string;
+  Password: string;
+  Role: UserRole;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,10 +26,10 @@ export class UserService {
   }
 
   create(payload: CreateUserRequest): Observable<AuthUser> {
-    return this.http.post<AuthUser>(`${environment.apiUrl}/users`, payload);
+    return this.http.post<AuthUser>(`${environment.apiUrl}/auth/register`, payload);
   }
 
   setActive(userId: string, isActive: boolean): Observable<void> {
-    return this.http.patch<void>(`${environment.apiUrl}/users/${userId}/status`, { isActive });
+    return this.http.patch<void>(`${environment.apiUrl}/users/${userId}/status/${isActive}`, { isActive });
   }
 }

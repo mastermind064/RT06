@@ -6,4 +6,5 @@ export interface AuthUser {
   rtId: string;
   role: UserRole;
   token: string;
+  rtRw: string;
 }

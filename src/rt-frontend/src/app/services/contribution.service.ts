@@ -8,12 +8,16 @@ import { Contribution } from '../models/contribution.model';
 export class ContributionService {
   constructor(private http: HttpClient) {}
 
-  list(): Observable<Contribution[]> {
+  listMe(): Observable<Contribution[]> {
+    return this.http.get<Contribution[]>(`${environment.apiUrl}/contributions/me`);
+  }
+
+  listAll(): Observable<Contribution[]> {
     return this.http.get<Contribution[]>(`${environment.apiUrl}/contributions`);
   }
 
   get(id: string): Observable<Contribution> {
-    return this.http.get<Contribution>(`${environment.apiUrl}/contributions/${id}`);
+    return this.http.get<Contribution>(`${environment.apiUrl}/contributions/${id}/edit`);
   }
 
   create(payload: FormData): Observable<void> {
@@ -24,8 +28,8 @@ export class ContributionService {
     return this.http.put<void>(`${environment.apiUrl}/contributions/${id}`, payload);
   }
 
-  approve(id: string): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/contributions/${id}/approve`, {});
+  approve(id: string, payload: any): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/contributions/${id}/review`, payload);
   }
 
   reject(id: string, note: string): Observable<void> {

@@ -57,7 +57,7 @@ public class ContributionsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [Authorize]
     public async Task<IActionResult> GetByRtAsync([FromQuery] string? status, CancellationToken cancellationToken)
     {
         var rtId = _tenantProvider.GetRtId();
@@ -76,15 +76,46 @@ public class ContributionsController : ControllerBase
                 c.AmountPaid,
                 c.PaymentDate,
                 c.Status,
-                c.AdminNote
+                c.AdminNote,
+                c.PeriodStart,
+                c.PeriodEnd
             }).ToListAsync(cancellationToken);
+
+        return Ok(results);
+    }
+
+    [HttpGet("{contributionId:guid}/edit")]
+    [Authorize]
+    public async Task<IActionResult> GetByUseerAsync(Guid contributionId, CancellationToken cancellationToken)
+    {
+        var rtId = _tenantProvider.GetRtId();
+        var query = _dbContext.Contributions.Where(c => c.RtId == rtId);
+        if (contributionId != null)
+        {
+            query = query.Where(c => c.ContributionId == contributionId);
+        }
+
+        var results = await query
+            .OrderByDescending(c => c.PaymentDate)
+            .Select(c => new
+            {
+                c.ContributionId,
+                c.ResidentId,
+                c.AmountPaid,
+                c.PaymentDate,
+                c.Status,
+                c.AdminNote,
+                c.PeriodStart,
+                c.PeriodEnd,
+                c.ProofImagePath
+            }).FirstOrDefaultAsync(cancellationToken);
 
         return Ok(results);
     }
 
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.ResidentOnly)]
-    public async Task<IActionResult> ReportContributionAsync([FromBody] ContributionReportRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ReportContributionAsync([FromForm] ContributionReportRequest request, CancellationToken cancellationToken)
     {
         var rtId = _tenantProvider.GetRtId();
         var userId = _tenantProvider.GetUserId();
@@ -94,17 +125,55 @@ public class ContributionsController : ControllerBase
             return BadRequest("Resident profile is required before reporting contributions");
         }
 
+        // 1. Parse periodStart & periodEnd (contoh format '2025-01' = Januari 2025)
+        // kamu bisa sesuaikan logikanya
+        if (!DateTime.TryParse(request.PeriodStart + "-01", out var periodStartDate))
+        {
+            return BadRequest("Invalid periodStart format");
+        }
+
+        if (!DateTime.TryParse(request.PeriodEnd + "-01", out var periodEndDate))
+        {
+            return BadRequest("Invalid periodEnd format");
+        }
+
+        if (!DateTime.TryParse(request.PaymentDate, out var paymentDate))
+        {
+            return BadRequest("Invalid paymentDate format");
+        }
+
+        // 2. Simpan file bukti bayar (kalau ada)
+        string proofImagePath = string.Empty;
+
+        if (request.Proof is not null && request.Proof.Length > 0)
+        {
+            // tentukan folder upload, misal wwwroot/uploads/contributions/{rtId}/
+            var root = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "contributions", rtId.ToString());
+            Directory.CreateDirectory(root);
+
+            var fileName = $"{Guid.NewGuid()}_{request.Proof.FileName}";
+            var fullPath = Path.Combine(root, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await request.Proof.CopyToAsync(stream, cancellationToken);
+            }
+
+            // simpan path relatif yg bisa ditampilkan lagi ke FE
+            proofImagePath = $"/uploads/contributions/{rtId}/{fileName}";
+        }
+
         var now = DateTime.UtcNow;
         var contribution = new Contribution
         {
             ContributionId = Guid.NewGuid(),
             RtId = rtId,
             ResidentId = residentId.Value,
-            PeriodStart = request.PeriodStart,
-            PeriodEnd = request.PeriodEnd,
+            PeriodStart = periodStartDate,
+            PeriodEnd = periodEndDate,
             AmountPaid = request.AmountPaid,
-            PaymentDate = request.PaymentDate,
-            ProofImagePath = request.ProofImagePath,
+            PaymentDate = paymentDate,
+            ProofImagePath = proofImagePath,
             Status = "PENDING",
             CreatedAt = now,
             UpdatedAt = now
@@ -113,19 +182,30 @@ public class ContributionsController : ControllerBase
         _dbContext.Contributions.Add(contribution);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        await _eventPublisher.AppendAsync("CONTRIBUTION", contribution.ContributionId, "ContributionReported", new
+        await _eventPublisher.AppendAsync(
+            "CONTRIBUTION",
+            contribution.ContributionId,
+            "ContributionReported",
+            new
+            {
+                contribution.ContributionId,
+                contribution.AmountPaid,
+                contribution.PaymentDate
+            },
+            userId,
+            cancellationToken
+        );
+
+        return Accepted(new
         {
             contribution.ContributionId,
-            contribution.AmountPaid,
-            contribution.PaymentDate
-        }, userId, cancellationToken);
-
-        return Accepted(new { contribution.ContributionId, contribution.Status });
+            contribution.Status
+        });
     }
 
     [HttpPut("{contributionId:guid}")]
     [Authorize(Policy = AuthorizationPolicies.ResidentOnly)]
-    public async Task<IActionResult> UpdateContributionAsync(Guid contributionId, [FromBody] ContributionUpdateRequest request,
+    public async Task<IActionResult> UpdateContributionAsync(Guid contributionId, [FromForm] ContributionUpdateRequest request,
         CancellationToken cancellationToken)
     {
         var rtId = _tenantProvider.GetRtId();
@@ -149,9 +229,49 @@ public class ContributionsController : ControllerBase
             return BadRequest("Only pending contributions can be updated");
         }
 
+        // 1. Parse periodStart & periodEnd (contoh format '2025-01' = Januari 2025)
+        // kamu bisa sesuaikan logikanya
+        if (!DateTime.TryParse(request.PeriodStart + "-01", out var periodStartDate))
+        {
+            return BadRequest("Invalid periodStart format");
+        }
+
+        if (!DateTime.TryParse(request.PeriodEnd + "-01", out var periodEndDate))
+        {
+            return BadRequest("Invalid periodEnd format");
+        }
+
+        if (!DateTime.TryParse(request.PaymentDate, out var paymentDate))
+        {
+            return BadRequest("Invalid paymentDate format");
+        }
+
+        // 2. Simpan file bukti bayar (kalau ada)
+        string proofImagePath = string.Empty;
+
+        if (request.Proof is not null && request.Proof.Length > 0)
+        {
+            // tentukan folder upload, misal wwwroot/uploads/contributions/{rtId}/
+            var root = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "contributions", rtId.ToString());
+            Directory.CreateDirectory(root);
+
+            var fileName = $"{Guid.NewGuid()}_{request.Proof.FileName}";
+            var fullPath = Path.Combine(root, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await request.Proof.CopyToAsync(stream, cancellationToken);
+            }
+
+            // simpan path relatif yg bisa ditampilkan lagi ke FE
+            proofImagePath = $"/uploads/contributions/{rtId}/{fileName}";
+        }
+
+        contribution.PeriodStart = periodStartDate;
+        contribution.PeriodEnd = periodEndDate;
         contribution.AmountPaid = request.AmountPaid;
-        contribution.PaymentDate = request.PaymentDate;
-        contribution.ProofImagePath = request.ProofImagePath;
+        contribution.PaymentDate = paymentDate;
+        contribution.ProofImagePath = proofImagePath;
         contribution.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);

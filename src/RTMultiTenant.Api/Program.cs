@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using RTMultiTenant.Api.Data;
 using RTMultiTenant.Api.Services;
@@ -8,6 +9,7 @@ using RTMultiTenant.Api.Validators;
 using RTMultiTenant.Api.Extensions;
 using FluentValidation.AspNetCore;
 using FluentValidation;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,10 +63,77 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(AuthorizationPolicies.ResidentOnly, policy => policy.RequireRole("WARGA"));
 });
 
+
+// ---------- ADD THIS: CORS ----------
+var corsPolicyName = "AllowAngularDev";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicyName, policy =>
+    {
+        policy.WithOrigins(
+                    "http://localhost:4200", // Angular dev server
+                    "https://localhost:55570/" // swagger 
+               )
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+// ------------------------------------
+
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "RT Multi Tenant API",
+        Version = "v1",
+        Description = "API backend untuk aplikasi RT dengan multi tenant dan JWT auth"
+    });
+
+    // 🧩 Tambahkan definisi security untuk Bearer JWT
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Masukkan token JWT dengan format: **Bearer {token}**",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    // 🔐 Tambahkan requirement agar Swagger tahu semua endpoint bisa pakai Bearer
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
 
 var app = builder.Build();
+
+var uploadsPath = Path.Combine(app.Environment.WebRootPath!, "uploads"); // ⬅️ wwwroot/uploads
+Directory.CreateDirectory(uploadsPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads" // tetap /uploads, tapi sumbernya dari wwwroot/uploads
+});
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -73,6 +142,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ---------- USE CORS (place before auth) ----------
+app.UseCors(corsPolicyName);
+// --------------------------------------------------
 
 app.UseAuthentication();
 app.UseAuthorization();
