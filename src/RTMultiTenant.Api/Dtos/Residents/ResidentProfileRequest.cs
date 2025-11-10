@@ -12,6 +12,7 @@ public class ResidentProfileRequest
     public string Gender { get; set; } = default!;
     public string Blok { get; set; } = default!;
     public string PhoneNumber { get; set; } = default!;
+    public string? Email { get; set; }
     public IFormFile? KkDocumentPath { get; set; }
     public IFormFile? PicPath { get; set; }
     //public List<ResidentFamilyMemberRequest> FamilyMembers { get; set; } = new();

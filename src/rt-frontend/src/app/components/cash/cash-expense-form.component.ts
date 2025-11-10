@@ -40,7 +40,7 @@ export class CashExpenseFormComponent implements OnInit {
     this.loading = true;
     this.cashExpenseService.get(id).subscribe({
       next: (expense) => {
-        console.log(expense);
+        // console.log(expense);
         this.form.patchValue({
           ExpenseId: expense[0].ExpenseId,
           ExpenseDate: this.cashExpenseService['toDateInputValue'](expense[0].ExpenseDate),

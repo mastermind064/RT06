@@ -12,6 +12,7 @@ public class ResidentProfileRequestValidator : AbstractValidator<ResidentProfile
         RuleFor(x => x.Gender).NotEmpty().Must(g => g is "L" or "P");
         RuleFor(x => x.Blok).NotEmpty().MaximumLength(3);
         RuleFor(x => x.PhoneNumber).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email));
         RuleForEach(x => x.FamilyMembers).SetValidator(new ResidentFamilyMemberRequestValidator());
     }
 }

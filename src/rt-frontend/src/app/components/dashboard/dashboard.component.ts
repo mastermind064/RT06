@@ -32,7 +32,7 @@ export class DashboardComponent implements OnInit {
     const { year, month } = this.filterForm.getRawValue();
     this.loading = true;
     this.summaryService.getMonthlySummary(year, month).subscribe({
-      next: (summary) => {console.log(summary);
+      next: (summary) => {//console.log(summary);
         this.summary = summary.Monthly;
         this.yearlySummary = summary.Yearly;
         this.loading = false;

@@ -27,3 +27,8 @@ public class ContributionReviewRequest
     public bool Approve { get; set; }
     public string? AdminNote { get; set; }
 }
+
+public class ContributionRejectRequest
+{
+    public string? Note { get; set; }
+}

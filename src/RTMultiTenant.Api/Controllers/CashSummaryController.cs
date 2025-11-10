@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RTMultiTenant.Api.Data;
 using RTMultiTenant.Api.Services;
+using RTMultiTenant.Api.Extensions;
 
 namespace RTMultiTenant.Api.Controllers;
 
@@ -114,4 +115,112 @@ public class CashSummaryController : ControllerBase
         return Ok(result);
     }
 
+    // }
+
+    [HttpGet("monitoring")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    public async Task<IActionResult> GetMonitoringAsync(
+        [FromQuery] int year,
+        [FromQuery] string? name,
+        [FromQuery] string? blok,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        if (year <= 0) return BadRequest("year is required");
+
+        var rtId = _tenantProvider.GetRtId();
+
+        var residents = _dbContext.Residents.AsQueryable().Where(r => r.RtId == rtId);
+        if (!string.IsNullOrWhiteSpace(name)) residents = residents.Where(r => r.FullName.Contains(name));
+        if (!string.IsNullOrWhiteSpace(blok)) residents = residents.Where(r => r.Blok.Contains(blok));
+
+        var total = await residents.CountAsync(cancellationToken);
+
+        var contrib = _dbContext.Contributions.Where(c => c.RtId == rtId && c.Status == "APPROVED" && c.PaymentDate.Year == year);
+
+        var items = await residents
+            .OrderBy(r => r.Blok).ThenBy(r => r.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new
+            {
+                r.ResidentId,
+                r.FullName,
+                r.Blok,
+                M1 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 1).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M2 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 2).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M3 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 3).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M4 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 4).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M5 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 5).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M6 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 6).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M7 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 7).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M8 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 8).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M9 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 9).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M10 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 10).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M11 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 11).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+                M12 = contrib.Where(c => c.ResidentId == r.ResidentId && c.PaymentDate.Month == 12).Sum(c => (decimal?)c.AmountPaid) ?? 0m
+            })
+            .ToListAsync(cancellationToken);
+
+        var itemsWithTotal = items.Select(x => new
+        {
+            x.ResidentId,
+            x.FullName,
+            x.Blok,
+            x.M1,
+            x.M2,
+            x.M3,
+            x.M4,
+            x.M5,
+            x.M6,
+            x.M7,
+            x.M8,
+            x.M9,
+            x.M10,
+            x.M11,
+            x.M12,
+            Total = x.M1 + x.M2 + x.M3 + x.M4 + x.M5 + x.M6 + x.M7 + x.M8 + x.M9 + x.M10 + x.M11 + x.M12
+        }).ToList();
+
+        // footer totals across all filtered residents (not paged)
+        var residentIds = residents.Select(r => r.ResidentId);
+        var contribFiltered = contrib.Where(c => residentIds.Contains(c.ResidentId));
+
+        var footer = await contribFiltered.GroupBy(_ => 1).Select(g => new
+        {
+            M1 = g.Where(c => c.PaymentDate.Month == 1).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M2 = g.Where(c => c.PaymentDate.Month == 2).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M3 = g.Where(c => c.PaymentDate.Month == 3).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M4 = g.Where(c => c.PaymentDate.Month == 4).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M5 = g.Where(c => c.PaymentDate.Month == 5).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M6 = g.Where(c => c.PaymentDate.Month == 6).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M7 = g.Where(c => c.PaymentDate.Month == 7).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M8 = g.Where(c => c.PaymentDate.Month == 8).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M9 = g.Where(c => c.PaymentDate.Month == 9).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M10 = g.Where(c => c.PaymentDate.Month == 10).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M11 = g.Where(c => c.PaymentDate.Month == 11).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+            M12 = g.Where(c => c.PaymentDate.Month == 12).Sum(c => (decimal?)c.AmountPaid) ?? 0m,
+        }).FirstOrDefaultAsync(cancellationToken);
+
+        footer ??= new { M1 = 0m, M2 = 0m, M3 = 0m, M4 = 0m, M5 = 0m, M6 = 0m, M7 = 0m, M8 = 0m, M9 = 0m, M10 = 0m, M11 = 0m, M12 = 0m };
+        var footerWithTotal = new
+        {
+            footer.M1,
+            footer.M2,
+            footer.M3,
+            footer.M4,
+            footer.M5,
+            footer.M6,
+            footer.M7,
+            footer.M8,
+            footer.M9,
+            footer.M10,
+            footer.M11,
+            footer.M12,
+            Total = footer.M1 + footer.M2 + footer.M3 + footer.M4 + footer.M5 + footer.M6 + footer.M7 + footer.M8 + footer.M9 + footer.M10 + footer.M11 + footer.M12
+        };
+
+        return Ok(new { Items = itemsWithTotal, Total = total, Footer = footerWithTotal });
+    }
 }

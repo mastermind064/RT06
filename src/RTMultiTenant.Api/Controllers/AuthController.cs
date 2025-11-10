@@ -2,6 +2,7 @@ using BCrypt.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RTMultiTenant.Api.Data;
 using RTMultiTenant.Api.Dtos.Auth;
 using RTMultiTenant.Api.Entities;
@@ -16,18 +17,22 @@ public class AuthController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly ITenantProvider _tenantProvider;
+    private readonly PasswordResetService _passwordResetService;
 
-    public AuthController(AppDbContext dbContext, IJwtTokenService jwtTokenService, ITenantProvider tenantProvider)
+    public AuthController(AppDbContext dbContext, IJwtTokenService jwtTokenService, ITenantProvider tenantProvider,
+        PasswordResetService passwordResetService)
     {
         _dbContext = dbContext;
         _jwtTokenService = jwtTokenService;
         _tenantProvider = tenantProvider;
+        _passwordResetService = passwordResetService;
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
+        var defaultPic = "/uploads/default/avatar.png";
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == request.Username, cancellationToken);
         if (user is null)
         {
@@ -41,7 +46,7 @@ public class AuthController : ControllerBase
 
         var resident = new Resident();
 
-        if (user.Role == "WARGA" && user.ResidentId is null)
+        if (user.Role == "WARGA" && user.ResidentId != null)
         {
             resident = await _dbContext.Residents.FirstOrDefaultAsync(r => r.ResidentId == user.ResidentId, cancellationToken);
             if (resident is null)
@@ -65,9 +70,84 @@ public class AuthController : ControllerBase
             Role = user.Role,
             Username = user.Username + " - " + resident.Blok,
             RtRw = rt.RtNumber + "/RW " + rt.RwNumber,
+            PicPath = resident.PicPath.IsNullOrEmpty() ? defaultPic : resident.PicPath
         };
     }
 
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken,
+        [FromServices] IEmailSender emailSender)
+    {
+        if (string.IsNullOrWhiteSpace(request.UsernameOrEmail))
+            return BadRequest("Username atau email wajib diisi");
+        if (string.IsNullOrWhiteSpace(request.Blok))
+            return BadRequest("Blok wajib diisi");
+
+        bool looksEmail = request.UsernameOrEmail.Contains('@');
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u =>
+            looksEmail ? u.Email == request.UsernameOrEmail : u.Username == request.UsernameOrEmail,
+            cancellationToken);
+        if (user is null)
+            return NotFound(looksEmail ? "Email tidak terdaftar" : "Akun tidak ditemukan");
+
+        if (!user.ResidentId.HasValue)
+        {
+            return BadRequest("Akun tidak memiliki data warga");
+        }
+
+        var resident = await _dbContext.Residents.FirstOrDefaultAsync(r => r.ResidentId == user.ResidentId.Value, cancellationToken);
+        if (resident is null)
+        {
+            return NotFound("Data warga tidak ditemukan");
+        }
+        if (!string.Equals(resident.Blok, request.Blok, StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound("Blok tidak cocok dengan akun");
+        }
+
+        var token = _passwordResetService.Generate(user.UserId);
+        var resetUrl = $"/reset-password?token={token}"; // FE path
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            return BadRequest("Email belum diisi pada akun ini");
+        }
+
+        var subject = "Reset Password Portal RT";
+        var body = $"<p>Anda menerima email ini karena ada permintaan reset password.</p><p>Klik tautan berikut untuk mengubah password:</p><p><a href=\"{resetUrl}\">{resetUrl}</a></p><p>Tautan berlaku selama 2 jam.</p>";
+        var sent = await emailSender.SendAsync(user.Email!, subject, body, cancellationToken);
+        Console.WriteLine($"[PasswordReset] Link for {user.Username}: {resetUrl} (email sent: {sent})");
+
+        return Accepted(new { Message = sent ? "Tautan reset telah dikirim ke email Anda" : "SMTP belum dikonfigurasi, gunakan tautan dev untuk reset", EmailSent = sent, DevResetPath = resetUrl });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPasswordAsync([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest("Token dan password baru wajib diisi");
+
+        var userId = _passwordResetService.Validate(request.Token);
+        if (!userId.HasValue)
+        {
+            return BadRequest("Token tidak valid atau sudah kedaluwarsa");
+        }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId.Value, cancellationToken);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _passwordResetService.Invalidate(request.Token);
+        return NoContent();
+    }
     [HttpPost("register")]
     [Authorize(Policy = Extensions.AuthorizationPolicies.AdminOnly)]
     public async Task<IActionResult> RegisterUserAsync([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
@@ -130,6 +210,7 @@ public class AuthController : ControllerBase
                 RtId = rtId,
                 Username = request.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Email = request.Email,
                 Role = request.Role,
                 IsActive = true,
                 ResidentId = residentIdToUse, // <-- penting: pastikan ke residentId yang benar

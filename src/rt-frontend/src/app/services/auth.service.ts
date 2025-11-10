@@ -13,11 +13,22 @@ interface LoginResponse {
   Role: UserRole;
   RtId: string;
   RtRw: string;
+  PicPath: string;
 }
 
 interface LoginRequest {
   username: string;
   password: string;
+}
+
+export interface ForgotPasswordRequest {
+  usernameOrEmail: string;
+  blok: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +50,17 @@ export class AuthService {
     }
   }
 
+  forgotPassword(payload: ForgotPasswordRequest) {
+    return this.http.post<{ Message: string; EmailSent: boolean; DevResetPath?: string }>(
+      `${environment.apiUrl}/auth/forgot-password`,
+      payload
+    );
+  }
+
+  resetPassword(payload: ResetPasswordRequest) {
+    return this.http.post<void>(`${environment.apiUrl}/auth/reset-password`, payload);
+  }
+
   /** 🔐 Login dan simpan token */
   login(request: LoginRequest): Observable<void> {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, request).pipe(
@@ -49,7 +71,8 @@ export class AuthService {
           username: res.Username,
           role: res.Role,
           rtId: res.RtId,
-          rtRw: res.RtRw
+          rtRw: res.RtRw,
+          PicPath: res.PicPath.toString()
         };
 
         localStorage.setItem(this.storageKey, JSON.stringify(user));

@@ -6,6 +6,7 @@ export interface ResidentProfile {
   Gender: 'L' | 'P';
   Blok: string;
   PhoneNumber: string;
+  Email?: string;
   KkDocumentPath?: File;
   PicPath?: File;
   ApprovalStatus: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';

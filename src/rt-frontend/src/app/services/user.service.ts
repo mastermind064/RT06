@@ -7,6 +7,7 @@ import { AuthUser, UserRole } from '../models/user.model';
 export interface UserSummary {
   UserId: string;
   Username: string;
+  Email?: string;
   Role: UserRole;
   IsActive: boolean;
 }
@@ -15,6 +16,7 @@ export interface CreateUserRequest {
   Username: string;
   Password: string;
   Role: UserRole;
+  Email?: string;
 }
 
 @Injectable({ providedIn: 'root' })

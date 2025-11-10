@@ -1,15 +1,29 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import { CashExpense } from '../models/cash-expense.model';
+
+export interface CashExpensesQuery {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PagedResult<T> {
+  Items: T[];
+  Total: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CashExpenseService {
   constructor(private http: HttpClient) {}
 
-  list(): Observable<CashExpense[]> {
-    return this.http.get<CashExpense[]>(`${environment.apiUrl}/cash/expenses`);
+  list(query?: CashExpensesQuery): Observable<PagedResult<CashExpense>> {
+    let params = new HttpParams();
+    const q = query || {};
+    params = params.set('page', String(q.page ?? 1));
+    params = params.set('pageSize', String(q.pageSize ?? 10));
+    return this.http.get<PagedResult<CashExpense>>(`${environment.apiUrl}/cash/expenses`, { params });
   }
 
   get(id: string): Observable<CashExpense> {

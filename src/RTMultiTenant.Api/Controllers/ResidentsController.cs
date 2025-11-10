@@ -27,6 +27,86 @@ public class ResidentsController : ControllerBase
         _eventPublisher = eventPublisher;
     }
 
+    [HttpGet("{residentId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    public async Task<IActionResult> GetByIdAsync(Guid residentId, CancellationToken cancellationToken)
+    {
+        var rtId = _tenantProvider.GetRtId();
+        var resident = await _dbContext.Residents
+            .Include(r => r.FamilyMembers)
+            .FirstOrDefaultAsync(r => r.ResidentId == residentId && r.RtId == rtId, cancellationToken);
+
+        if (resident is null)
+        {
+            return NotFound();
+        }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.RtId == rtId && u.ResidentId == resident.ResidentId, cancellationToken);
+
+        return Ok(new
+        {
+            resident.ResidentId,
+            resident.NationalIdNumber,
+            resident.FullName,
+            resident.BirthDate,
+            resident.Gender,
+            resident.Blok,
+            resident.PhoneNumber,
+            Email = user != null ? user.Email : null,
+            resident.KkDocumentPath,
+            resident.PicPath,
+            resident.ApprovalStatus,
+            resident.ApprovalNote,
+            FamilyMembers = resident.FamilyMembers.Select(member => new
+            {
+                member.FamilyMemberId,
+                member.FullName,
+                member.BirthDate,
+                member.Gender,
+                member.Relationship
+            })
+        });
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> ListAsync(
+        [FromQuery] string? name,
+        [FromQuery] string? blok,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var rtId = _tenantProvider.GetRtId();
+        var q = _dbContext.Residents.Where(r => r.RtId == rtId);
+
+        if (!string.IsNullOrWhiteSpace(name))
+            q = q.Where(r => r.FullName.Contains(name));
+        if (!string.IsNullOrWhiteSpace(blok))
+            q = q.Where(r => r.Blok.Contains(blok));
+        if (!string.IsNullOrWhiteSpace(status))
+            q = q.Where(r => r.ApprovalStatus == status);
+
+        var total = await q.CountAsync(cancellationToken);
+
+        var items = await q
+            .OrderBy(r => r.Blok)
+            .ThenBy(r => r.FullName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new
+            {
+                r.ResidentId,
+                r.FullName,
+                r.Blok,
+                r.PhoneNumber,
+                r.ApprovalStatus
+            }).ToListAsync(cancellationToken);
+
+        return Ok(new { Items = items, Total = total });
+    }
+
     [HttpGet("me")]
     [Authorize(Policy = AuthorizationPolicies.ResidentOnly)]
     public async Task<IActionResult> GetMyProfileAsync(CancellationToken cancellationToken)
@@ -51,6 +131,7 @@ public class ResidentsController : ControllerBase
             resident.Gender,
             resident.Blok,
             resident.PhoneNumber,
+            Email = user.Email,
             resident.KkDocumentPath,
             resident.PicPath,
             resident.ApprovalStatus,
@@ -179,7 +260,24 @@ public class ResidentsController : ControllerBase
                 newFilesToCleanup.Add(picPath);
             }
 
-            // ====== 3) Map field profile ======
+            // ====== 3) Validasi unik blok & email ======
+            bool blokUsed = await _dbContext.Residents.AnyAsync(r => r.RtId == rtId && r.Blok == request.Blok && r.ResidentId != resident.ResidentId, cancellationToken);
+            if (blokUsed)
+            {
+                return Conflict("Blok sudah digunakan warga lain");
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                bool emailUsed = await _dbContext.Users.AnyAsync(u => u.RtId == rtId && u.Email == request.Email && u.UserId != user.UserId, cancellationToken);
+                if (emailUsed)
+                {
+                    return Conflict("Email sudah terdaftar");
+                }
+                user.Email = request.Email;
+            }
+
+            // ====== 4) Map field profile ======
             resident.NationalIdNumber = request.NationalIdNumber;
             resident.FullName = request.FullName;
             resident.BirthDate = request.BirthDate;
@@ -199,7 +297,7 @@ public class ResidentsController : ControllerBase
                 user.ResidentId = resident.ResidentId;
             }
 
-            // ====== 4) Reset & isi ulang anggota keluarga ======
+            // ====== 5) Reset & isi ulang anggota keluarga ======
             var existingMembers = _dbContext.ResidentFamilyMembers
                 .Where(m => m.ResidentId == resident.ResidentId);
             _dbContext.ResidentFamilyMembers.RemoveRange(existingMembers);
@@ -223,7 +321,7 @@ public class ResidentsController : ControllerBase
 
             user.UpdatedAt = now;
 
-            // ====== 5) Simpan DB lalu publish event, semuanya di dalam transaksi ======
+            // ====== 6) Simpan DB lalu publish event, semuanya di dalam transaksi ======
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             await _eventPublisher.AppendAsync("RESIDENT", resident.ResidentId, "ResidentProfileSubmitted", new

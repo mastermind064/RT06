@@ -1,6 +1,14 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>Daftar Laporan Iuran</h3>
-  <a routerLink="/contributions/new" class="btn btn-primary">Laporkan Iuran</a>
+  <div class="d-flex align-items-center">
+    <div *ngIf="authService.hasRole('ADMIN')" class="me-3">
+      <label class="form-label me-2 mb-0">Rows</label>
+      <select class="form-select form-select-sm d-inline-block" style="width: auto;" [ngModel]="query.pageSize" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+    <a routerLink="/contributions/new" class="btn btn-primary">Laporkan Iuran</a>
+  </div>
 </div>
 <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
 <div class="text-center" *ngIf="loading">
@@ -10,24 +18,97 @@
   <table class="table table-striped align-middle">
     <thead class="table-light">
       <tr>
+        <th>Blok</th>
         <th>Periode</th>
         <th>Nominal</th>
-        <th>Tanggal Bayar</th>
+        <!-- <th>Tanggal Bayar</th> -->
+        <th>Bukti</th>
         <th>Status</th>
+        <th>Admin Note</th>
+        <th *ngIf="authService.hasRole('ADMIN')">Batal</th>
         <th></th>
+      </tr>
+      <tr>
+        <th>
+          <input type="text" class="form-control form-control-sm" placeholder="Cari blok" [(ngModel)]="query.blok">
+        </th>
+        <th>
+          <div class="d-flex gap-1">
+            <input type="month" class="form-control form-control-sm" [(ngModel)]="filterPeriodStartFrom">
+            <input type="month" class="form-control form-control-sm" [(ngModel)]="filterPeriodEndTo">
+          </div>
+        </th>
+        <th>
+          <div class="d-flex gap-1">
+            <input type="number" class="form-control form-control-sm" placeholder="Min" [(ngModel)]="filterAmountMin">
+            <input type="number" class="form-control form-control-sm" placeholder="Max" [(ngModel)]="filterAmountMax">
+          </div>
+        </th>
+        <!-- <th>
+          <div class="d-flex gap-1">
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="filterPaymentDateFrom">
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="filterPaymentDateTo">
+          </div>
+        </th> -->
+        <th>
+          <!-- no filter for proof -->
+        </th>
+        <th>
+          <select class="form-select form-select-sm" [(ngModel)]="query.status">
+            <option value="">Semua</option>
+            <option value="PENDING">PENDING</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="REJECTED">REJECTED</option>
+            <option value="DRAFT">DRAFT</option>
+          </select>
+        </th>
+        <th>
+          <input type="text" class="form-control form-control-sm" placeholder="Cari catatan" [(ngModel)]="query.adminNote">
+        </th>
+        <th></th>
+        <th class="text-end">
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-outline-secondary" (click)="resetFilters()">Reset</button>
+            <button class="btn btn-sm btn-primary" (click)="applyFilters()">Filter</button>
+          </div>
+        </th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let contribution of contributions">
+        <td>{{ contribution.Blok || '-' }}</td>
         <td>{{ contribution.PeriodStart | date:'MMM yyyy' }} - {{ contribution.PeriodEnd | date:'MMM yyyy' }}</td>
         <td>{{ contribution.AmountPaid | currency:'IDR':'symbol-narrow' }}</td>
         <td>{{ contribution.PaymentDate | date:'dd MMM yyyy' }}</td>
+        <td>
+          <ng-container *ngIf="contribution.ProofImagePath; else noProof">
+            <a class="btn btn-sm btn-outline-primary" [href]="fullUrl(contribution.ProofImagePath)" target="_blank" rel="noopener noreferrer">Lihat</a>
+          </ng-container>
+          <ng-template #noProof>
+            <span class="text-muted">-</span>
+          </ng-template>
+        </td>
         <td>
           <span class="badge" [ngClass]="{
             'bg-warning text-dark': contribution.Status === 'PENDING' || contribution.Status === 'DRAFT',
             'bg-success': contribution.Status === 'APPROVED',
             'bg-danger': contribution.Status === 'REJECTED'
           }">{{ contribution.Status }}</span>
+        </td>
+        <td>
+          <ng-container *ngIf="contribution.AdminNote && contribution.AdminNote.trim().length; else noAdminNote">
+            <span class="badge bg-info text-dark me-1">CATATAN</span>
+            <span class="d-inline-block text-truncate align-middle" style="max-width: 220px" [attr.title]="contribution.AdminNote">
+              {{ contribution.AdminNote }}
+            </span>
+          </ng-container>
+          <ng-template #noAdminNote>-</ng-template>
+        </td>
+        <td *ngIf="authService.hasRole('ADMIN')" class="text-center">
+          <button class="btn btn-sm btn-outline-danger"
+                  *ngIf="contribution.Status === 'APPROVED'"
+                  (click)="cancel(contribution)">Batal</button>
+          <span *ngIf="contribution.Status !== 'APPROVED'" class="text-muted">-</span>
         </td>
         <td class="text-end">
           <a class="btn btn-sm btn-outline-secondary me-2" [routerLink]="['/contributions', contribution.ContributionId, 'edit']"
@@ -41,8 +122,21 @@
         </td>
       </tr>
       <tr *ngIf="contributions.length === 0">
-        <td colspan="5" class="text-center text-muted">Belum ada laporan iuran.</td>
+        <td [attr.colspan]="authService.hasRole('ADMIN') ? 9 : 8" class="text-center text-muted">Belum ada laporan iuran.</td>
       </tr>
     </tbody>
   </table>
+</div>
+<div class="d-flex justify-content-between align-items-center" *ngIf="!loading">
+  <div class="text-muted">
+    Menampilkan
+    {{ ((query.page||1)-1)*(query.pageSize||10)+ (contributions.length?1:0) }} -
+    {{ ((query.page||1)-1)*(query.pageSize||10) + contributions.length }}
+    dari {{ total }} data
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-outline-secondary btn-sm" (click)="prevPage()" [disabled]="(query.page||1) === 1">Prev</button>
+    <span class="btn btn-sm btn-outline-secondary disabled">Hal {{ query.page || 1 }} / {{ totalPages }}</span>
+    <button class="btn btn-outline-secondary btn-sm" (click)="nextPage()" [disabled]="(query.page||1) >= totalPages">Next</button>
+  </div>
 </div>

@@ -85,6 +85,7 @@ export class ResidentProfileComponent implements OnInit {
     gender: this.fb.control<'L' | 'P'>('L', { nonNullable: true, validators: [Validators.required] }),
     blok: this.fb.control<string>('', { nonNullable: true }),
     phoneNumber: this.fb.control<string>('', { nonNullable: true }),
+    email: this.fb.control<string>('', { nonNullable: true, validators: [Validators.email] }),
     picPath: null as File | null,
     kkDocumentPath: null as File | null,
     approvalStatus: this.fb.control<'PENDING' | 'DRAFT' | 'APPROVED' | 'REJECTED'>('PENDING', { nonNullable: true }),
@@ -120,7 +121,18 @@ export class ResidentProfileComponent implements OnInit {
   }
 
   submit(): void {
+    console.log('submit')
+    // console.log(this.form);
+    Object.keys(this.form.controls).forEach(key => {
+      const control = this.form.get(key);
+      if (control?.invalid) {
+        console.warn(`❌ ${key} invalid`, control.errors);
+      } else {
+        console.log(`✅ ${key} valid`);
+      }
+    });
     if (this.form.invalid) {
+      // console.log('form invalid');
         this.form.markAllAsTouched();
         return;
     }
@@ -139,6 +151,7 @@ export class ResidentProfileComponent implements OnInit {
     formData.append('gender', raw.gender ?? '');
     formData.append('blok', raw.blok ?? '');
     formData.append('phoneNumber', raw.phoneNumber ?? '');
+    formData.append('email', (raw as any).email ?? '');
     formData.append('approvalStatus', (raw as any).approvalStatus);
     formData.append('approvalNote', (raw as any).approvalNote);
     if (raw.kkDocumentPath) {
@@ -264,19 +277,20 @@ export class ResidentProfileComponent implements OnInit {
     // this.picDeleted = false;
   }
 
-  removeKk() {
-    // tandai untuk dihapus saat submit
-    this.form.patchValue({ kkDocumentPath: null });
-    this.kkPreviewUrl = undefined;
-    this.currentKkUrl = undefined;
-    this.kkDeleted = true;
-  }
-
-  removePic() {
-    this.form.patchValue({ picPath: null });
-    this.picPreviewUrl = undefined;
-    this.currentPicUrl = undefined;
-    this.picDeleted = true;
+  removePic(file: string = 'pic') {
+    if (file === 'pic') {
+      this.form.patchValue({ picPath: null });
+      this.picPreviewUrl = undefined;
+      this.currentPicUrl = undefined;
+      this.previewPicIsPdf = false;
+      this.picDeleted = true;
+    } else if (file === 'kk') {
+      this.form.patchValue({ kkDocumentPath: null });
+      this.kkPreviewUrl = undefined;
+      this.currentKkUrl = undefined;
+      this.previewKkIsPdf = false;
+      this.kkDeleted = true;
+    }
   }
 
   isPdf(url?: string | SafeUrl): boolean {
@@ -294,7 +308,10 @@ export class ResidentProfileComponent implements OnInit {
       birthDate: this.toDateInputValue(profile.BirthDate),
       gender: this.mapGender(profile.Gender),
       blok: profile.Blok ?? '',
-      phoneNumber: profile.PhoneNumber ?? ''
+      phoneNumber: profile.PhoneNumber ?? '',
+      email: (profile as any).Email ?? '',
+      approvalStatus: (profile as any).ApprovalStatus ?? 'PENDING',
+      approvalNote: (profile as any).ApprovalNote ?? null
     });
 
     // simpan URL file saat ini

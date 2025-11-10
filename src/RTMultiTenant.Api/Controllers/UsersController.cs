@@ -36,6 +36,7 @@ namespace RTMultiTenant.Api.Controllers
             {
                 c.UserId,
                 c.Username,
+                c.Email,
                 c.ResidentId,
                 c.Role,
                 c.IsActive,

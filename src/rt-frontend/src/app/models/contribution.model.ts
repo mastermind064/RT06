@@ -3,6 +3,7 @@ export type ContributionStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export interface Contribution {
   ContributionId: string;
   ResidentId: string;
+  Blok?: string;
   PeriodStart: string;
   PeriodEnd: string;
   AmountPaid: number;

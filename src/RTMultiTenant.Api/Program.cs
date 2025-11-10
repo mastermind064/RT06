@@ -10,8 +10,26 @@ using RTMultiTenant.Api.Extensions;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
+
+// Configure Serilog (file sink, daily rolling)
+var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+Directory.CreateDirectory(logsDir);
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.File(
+        path: Path.Combine(logsDir, "rt-api-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        restrictedToMinimumLevel: LogEventLevel.Information,
+        shared: true)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog(Log.Logger);
 
 var configuration = builder.Configuration;
 
@@ -28,6 +46,9 @@ builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<EventPublisher>();
 builder.Services.AddScoped<MonthlySummaryUpdater>();
+builder.Services.AddSingleton<PasswordResetService>();
+builder.Services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -147,9 +168,24 @@ app.UseHttpsRedirection();
 app.UseCors(corsPolicyName);
 // --------------------------------------------------
 
+// Serilog request logging
+app.UseSerilogRequestLogging();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    Log.Information("Starting RTMultiTenant API");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application start-up failed");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

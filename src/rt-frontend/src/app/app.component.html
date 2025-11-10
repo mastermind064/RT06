@@ -9,30 +9,60 @@
         <li class="nav-item">
           <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
         </li>
-        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
+        <!-- <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
           <a class="nav-link" routerLink="/profile" routerLinkActive="active">Profil</a>
+        </li> -->
+        <li class="nav-item dropdown" *ngIf="authService.hasRole('WARGA')">
+          <a class="nav-link dropdown-toggle" href="#" id="iuranDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Iuran</a>
+          <ul class="dropdown-menu" aria-labelledby="iuranDropdown">
+            <li>
+              <a class="dropdown-item" routerLink="/contributions" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Iuranku</a>
+            </li>
+            <li>
+              <a class="dropdown-item" routerLink="/contributions/new" routerLinkActive="active">Lapor Iuran</a>
+            </li>
+          </ul>
         </li>
-        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
-          <a class="nav-link" routerLink="/contributions" routerLinkActive="active">Iuranku</a>
+        <!-- Kas RT Dropdown for ADMIN -->
+        <li class="nav-item dropdown" *ngIf="authService.hasRole('ADMIN')">
+          <a class="nav-link dropdown-toggle" href="#" id="kasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Kas RT</a>
+          <ul class="dropdown-menu" aria-labelledby="kasDropdown">
+            <li><a class="dropdown-item" routerLink="/contributions" routerLinkActive="active">Iuran Warga</a></li>
+            <li><a class="dropdown-item" routerLink="/cash-expenses" routerLinkActive="active">Pengeluaran Kas</a></li>
+            <li><a class="dropdown-item" routerLink="/cash-monitoring" routerLinkActive="active">Monitoring Kas</a></li>
+          </ul>
         </li>
-        <li class="nav-item" *ngIf="authService.hasRole('ADMIN')">
-          <a class="nav-link" routerLink="/contributions" routerLinkActive="active">Iuran Warga</a>
-        </li>
-        <li class="nav-item" *ngIf="authService.hasRole('WARGA')">
-          <a class="nav-link" routerLink="/contributions/new" routerLinkActive="active">Lapor Iuran</a>
-        </li>
-        <li class="nav-item" *ngIf="authService.hasRole('ADMIN')">
-          <a class="nav-link" routerLink="/cash-expenses" routerLinkActive="active">Pengeluaran Kas</a>
-        </li>
-        <li class="nav-item" *ngIf="authService.hasRole('ADMIN')">
-          <a class="nav-link" routerLink="/users" routerLinkActive="active">Manajemen User</a>
+
+        <!-- Warga Dropdown for all roles -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="wargaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Warga</a>
+          <ul class="dropdown-menu" aria-labelledby="wargaDropdown">
+            <li><a class="dropdown-item" routerLink="/residents" routerLinkActive="active">Warga Kita</a></li>
+            <li *ngIf="authService.hasRole('ADMIN')"><a class="dropdown-item" routerLink="/users" routerLinkActive="active">Manajemen User</a></li>
+          </ul>
         </li>
       </ul>
-      <span class="navbar-text me-3">{{ authService.currentUser()?.username | uppercase }}</span>
-      <button class="btn btn-outline-light" (click)="logout()" title="Logout">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
-
+      <div class="d-flex align-items-center ms-auto" *ngIf="authService.isAuthenticated()">
+        <div class="dropdown text-end">
+          <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <ng-container *ngIf="avatarUrl(); else avatarInitials">
+              <img [src]="avatarUrl()" alt="User" width="32" height="32" class="rounded-circle me-2" />
+            </ng-container>
+            <ng-template #avatarInitials>
+              <div class="avatar-fallback me-2">{{ initials }}</div>
+            </ng-template>
+            <span class="d-none d-sm-inline">{{ authService.currentUser()?.username }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li *ngIf="authService.hasRole('WARGA')">
+              <a class="dropdown-item" routerLink="/profile">Profile</a>
+            </li>
+            <li>
+              <button class="dropdown-item" (click)="logout()">Logout</button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </nav>

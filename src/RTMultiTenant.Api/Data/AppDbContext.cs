@@ -47,12 +47,14 @@ public class AppDbContext : DbContext
             entity.Property(e => e.RtId).HasColumnName("rt_id");
             entity.Property(e => e.Username).HasColumnName("username").HasMaxLength(50);
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash").HasMaxLength(255);
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(100);
             entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(10);
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.ResidentId).HasColumnName("resident_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(e => e.Username).IsUnique();
+            entity.HasIndex(e => new { e.RtId, e.Email }).IsUnique().HasDatabaseName("uq_rt_email");
         });
 
         modelBuilder.Entity<EventRecord>(entity =>

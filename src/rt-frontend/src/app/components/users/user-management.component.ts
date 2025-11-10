@@ -21,7 +21,8 @@ export class UserManagementComponent implements OnInit {
   form = this.fb.nonNullable.group({
     Username: ['', Validators.required],
     Password: ['', [Validators.required, Validators.minLength(6)]],
-    Role: ['WARGA' as const, Validators.required]
+    Role: ['WARGA' as const, Validators.required],
+    Email: ['']
   });
 
   ngOnInit(): void {
@@ -52,7 +53,7 @@ export class UserManagementComponent implements OnInit {
       next: () => {
         this.success = 'User berhasil dibuat.';
         this.error = null;
-        this.form.reset({ Username: '', Password: '', Role: 'WARGA' });
+        this.form.reset({ Username: '', Password: '', Role: 'WARGA', Email: '' });
         this.loadUsers();
       },
       error: () => {

@@ -48,12 +48,20 @@ public class CashExpensesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetExpensesAsync(Guid expenseId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetExpensesAsync(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var rtId = _tenantProvider.GetRtId();
-        var expenses = await _dbContext.CashExpenses
-            .Where(e => e.RtId == rtId)
+        var query = _dbContext.CashExpenses.Where(e => e.RtId == rtId);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(e => e.ExpenseDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(e => new
             {
                 e.ExpenseId,
@@ -63,7 +71,7 @@ public class CashExpensesController : ControllerBase
                 e.IsActive
             }).ToListAsync(cancellationToken);
 
-        return Ok(expenses);
+        return Ok(new { Items = items, Total = total });
     }
 
     [HttpPost]

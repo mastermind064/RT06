@@ -29,7 +29,21 @@ public class ContributionsController : ControllerBase
 
     [HttpGet("me")]
     [Authorize(Policy = AuthorizationPolicies.ResidentOnly)]
-    public async Task<IActionResult> GetMyContributionsAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyContributionsAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? blok,
+        [FromQuery] string? adminNote,
+        [FromQuery] DateTime? paymentDateFrom,
+        [FromQuery] DateTime? paymentDateTo,
+        [FromQuery] decimal? amountMin,
+        [FromQuery] decimal? amountMax,
+        [FromQuery] DateTime? periodStartFrom,
+        [FromQuery] DateTime? periodStartTo,
+        [FromQuery] DateTime? periodEndFrom,
+        [FromQuery] DateTime? periodEndTo,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var rtId = _tenantProvider.GetRtId();
         var residentId = _tenantProvider.GetResidentId();
@@ -38,9 +52,27 @@ public class ContributionsController : ControllerBase
             return Ok(Array.Empty<object>());
         }
 
-        var contributions = await _dbContext.Contributions
-            .Where(c => c.RtId == rtId && c.ResidentId == residentId.Value)
+        var query = _dbContext.Contributions
+            .Where(c => c.RtId == rtId && c.ResidentId == residentId.Value);
+
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(c => c.Status == status);
+        if (!string.IsNullOrWhiteSpace(blok)) query = query.Where(c => c.Resident.Blok.Contains(blok));
+        if (!string.IsNullOrWhiteSpace(adminNote)) query = query.Where(c => c.AdminNote != null && c.AdminNote.Contains(adminNote));
+        if (paymentDateFrom.HasValue) query = query.Where(c => c.PaymentDate >= paymentDateFrom.Value);
+        if (paymentDateTo.HasValue) query = query.Where(c => c.PaymentDate <= paymentDateTo.Value);
+        if (amountMin.HasValue) query = query.Where(c => c.AmountPaid >= amountMin.Value);
+        if (amountMax.HasValue) query = query.Where(c => c.AmountPaid <= amountMax.Value);
+        if (periodStartFrom.HasValue) query = query.Where(c => c.PeriodStart >= periodStartFrom.Value);
+        if (periodStartTo.HasValue) query = query.Where(c => c.PeriodStart <= periodStartTo.Value);
+        if (periodEndFrom.HasValue) query = query.Where(c => c.PeriodEnd >= periodEndFrom.Value);
+        if (periodEndTo.HasValue) query = query.Where(c => c.PeriodEnd <= periodEndTo.Value);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(c => c.PaymentDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new
             {
                 c.ContributionId,
@@ -50,25 +82,51 @@ public class ContributionsController : ControllerBase
                 c.PaymentDate,
                 c.Status,
                 c.AdminNote,
+                Blok = c.Resident.Blok,
                 c.ProofImagePath
             }).ToListAsync(cancellationToken);
 
-        return Ok(contributions);
+        return Ok(new { Items = items, Total = total });
     }
 
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> GetByRtAsync([FromQuery] string? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetByRtAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? blok,
+        [FromQuery] string? adminNote,
+        [FromQuery] DateTime? paymentDateFrom,
+        [FromQuery] DateTime? paymentDateTo,
+        [FromQuery] decimal? amountMin,
+        [FromQuery] decimal? amountMax,
+        [FromQuery] DateTime? periodStartFrom,
+        [FromQuery] DateTime? periodStartTo,
+        [FromQuery] DateTime? periodEndFrom,
+        [FromQuery] DateTime? periodEndTo,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var rtId = _tenantProvider.GetRtId();
         var query = _dbContext.Contributions.Where(c => c.RtId == rtId);
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            query = query.Where(c => c.Status == status);
-        }
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(c => c.Status == status);
+        if (!string.IsNullOrWhiteSpace(blok)) query = query.Where(c => c.Resident.Blok.Contains(blok));
+        if (!string.IsNullOrWhiteSpace(adminNote)) query = query.Where(c => c.AdminNote != null && c.AdminNote.Contains(adminNote));
+        if (paymentDateFrom.HasValue) query = query.Where(c => c.PaymentDate >= paymentDateFrom.Value);
+        if (paymentDateTo.HasValue) query = query.Where(c => c.PaymentDate <= paymentDateTo.Value);
+        if (amountMin.HasValue) query = query.Where(c => c.AmountPaid >= amountMin.Value);
+        if (amountMax.HasValue) query = query.Where(c => c.AmountPaid <= amountMax.Value);
+        if (periodStartFrom.HasValue) query = query.Where(c => c.PeriodStart >= periodStartFrom.Value);
+        if (periodStartTo.HasValue) query = query.Where(c => c.PeriodStart <= periodStartTo.Value);
+        if (periodEndFrom.HasValue) query = query.Where(c => c.PeriodEnd >= periodEndFrom.Value);
+        if (periodEndTo.HasValue) query = query.Where(c => c.PeriodEnd <= periodEndTo.Value);
+
+        var total = await query.CountAsync(cancellationToken);
 
         var results = await query
             .OrderByDescending(c => c.PaymentDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new
             {
                 c.ContributionId,
@@ -78,10 +136,12 @@ public class ContributionsController : ControllerBase
                 c.Status,
                 c.AdminNote,
                 c.PeriodStart,
-                c.PeriodEnd
+                c.PeriodEnd,
+                Blok = c.Resident.Blok,
+                c.ProofImagePath
             }).ToListAsync(cancellationToken);
 
-        return Ok(results);
+        return Ok(new { Items = results, Total = total });
     }
 
     [HttpGet("{contributionId:guid}/edit")]
@@ -107,6 +167,7 @@ public class ContributionsController : ControllerBase
                 c.AdminNote,
                 c.PeriodStart,
                 c.PeriodEnd,
+                Blok = c.Resident.Blok,
                 c.ProofImagePath
             }).FirstOrDefaultAsync(cancellationToken);
 
@@ -224,9 +285,9 @@ public class ContributionsController : ControllerBase
             return NotFound();
         }
 
-        if (contribution.Status != "PENDING")
+        if (contribution.Status != "PENDING" && contribution.Status != "REJECTED")
         {
-            return BadRequest("Only pending contributions can be updated");
+            return BadRequest("Only pending or rejected contributions can be updated");
         }
 
         // 1. Parse periodStart & periodEnd (contoh format '2025-01' = Januari 2025)
@@ -272,6 +333,9 @@ public class ContributionsController : ControllerBase
         contribution.AmountPaid = request.AmountPaid;
         contribution.PaymentDate = paymentDate;
         contribution.ProofImagePath = proofImagePath;
+        // Reset to PENDING so it can be reviewed again if previously REJECTED
+        contribution.Status = "PENDING";
+        contribution.AdminNote = null;
         contribution.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -321,6 +385,40 @@ public class ContributionsController : ControllerBase
         {
             await _summaryUpdater.AdjustContributionAsync(rtId, contribution.PaymentDate, contribution.AmountPaid, cancellationToken);
         }
+
+        return Ok(new { contribution.ContributionId, contribution.Status, contribution.AdminNote });
+    }
+
+    [HttpPost("{contributionId:guid}/reject")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    public async Task<IActionResult> RejectContributionAsync(Guid contributionId, [FromBody] ContributionRejectRequest request,
+        CancellationToken cancellationToken)
+    {
+        var rtId = _tenantProvider.GetRtId();
+        var userId = _tenantProvider.GetUserId();
+
+        var contribution = await _dbContext.Contributions.FirstOrDefaultAsync(c =>
+            c.ContributionId == contributionId && c.RtId == rtId, cancellationToken);
+
+        if (contribution is null)
+        {
+            return NotFound();
+        }
+
+        if (contribution.Status != "PENDING")
+        {
+            return BadRequest("Contribution already reviewed");
+        }
+
+        contribution.Status = "REJECTED";
+        contribution.AdminNote = request.Note;
+        contribution.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _eventPublisher.AppendAsync("CONTRIBUTION", contribution.ContributionId,
+            "ContributionRejected",
+            new { contribution.ContributionId, request.Note }, userId, cancellationToken);
 
         return Ok(new { contribution.ContributionId, contribution.Status, contribution.AdminNote });
     }

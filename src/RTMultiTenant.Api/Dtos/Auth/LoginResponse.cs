@@ -9,4 +9,5 @@ public class LoginResponse
     public string Username { get; set; } = default!;
     public string? Blok { get; set; }
     public string RtRw { get; set; } = default!;
+    public string? PicPath { get; set; }
 }

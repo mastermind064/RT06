@@ -7,4 +7,5 @@ export interface AuthUser {
   role: UserRole;
   token: string;
   rtRw: string;
+  PicPath?: string;
 }
