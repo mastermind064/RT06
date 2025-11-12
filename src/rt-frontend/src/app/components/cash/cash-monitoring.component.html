@@ -37,13 +37,13 @@
     </div>
 
     <div class="table-responsive" *ngIf="!loading">
-      <table class="table table-striped align-middle table-sm">
+      <table class="table table-striped table-bordered align-middle table-sm">
         <thead class="table-light">
           <tr>
             <th style="width:50px">No</th>
             <th>Blok</th>
             <th>Nama</th>
-            <th class="text-end" *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]">{{ m }}</th>
+            <th class="text-end month-col" *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]">{{ m }}</th>
             <th class="text-end">Total</th>
           </tr>
         </thead>
@@ -52,18 +52,18 @@
             <td>{{ ((query.page||1)-1)*(query.pageSize||10) + i + 1 }}</td>
             <td>{{ r.Blok }}</td>
             <td>{{ r.FullName }}</td>
-            <td class="text-end">{{ r.M1 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M2 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M3 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M4 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M5 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M6 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M7 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M8 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M9 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M10 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M11 | number:'1.0-0':'id' }}</td>
-            <td class="text-end">{{ r.M12 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M1 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M2 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M3 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M4 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M5 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M6 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M7 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M8 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M9 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M10 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M11 | number:'1.0-0':'id' }}</td>
+            <td class="text-end month-col">{{ r.M12 | number:'1.0-0':'id' }}</td>
             <td class="text-end fw-semibold">{{ r.Total | number:'1.0-0':'id' }}</td>
           </tr>
           <tr *ngIf="rows.length === 0">
@@ -73,18 +73,18 @@
         <tfoot *ngIf="footer">
           <tr class="table-light">
             <th colspan="3" class="text-end">Total</th>
-            <th class="text-end">{{ footer?.M1 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M2 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M3 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M4 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M5 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M6 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M7 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M8 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M9 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M10 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M11 | number:'1.0-0':'id' }}</th>
-            <th class="text-end">{{ footer?.M12 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M1 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M2 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M3 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M4 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M5 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M6 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M7 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M8 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M9 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M10 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M11 | number:'1.0-0':'id' }}</th>
+            <th class="text-end month-col">{{ footer?.M12 | number:'1.0-0':'id' }}</th>
             <th class="text-end fw-bold">{{ footer?.Total | number:'1.0-0':'id' }}</th>
           </tr>
         </tfoot>

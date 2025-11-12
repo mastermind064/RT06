@@ -7,7 +7,12 @@ import { CashMonitoringService, CashMonitoringQuery, CashMonitoringResult } from
   standalone: true,
   selector: 'app-cash-monitoring',
   imports: [CommonModule, FormsModule, NgIf, NgFor, DecimalPipe],
-  templateUrl: './cash-monitoring.component.html'
+  templateUrl: './cash-monitoring.component.html',
+  styles: [`
+    :host ::ng-deep table.table td.month-col, :host ::ng-deep table.table th.month-col {
+      width: 6rem;
+    }
+  `]
 })
 export class CashMonitoringComponent implements OnInit {
   private readonly service = inject(CashMonitoringService);
